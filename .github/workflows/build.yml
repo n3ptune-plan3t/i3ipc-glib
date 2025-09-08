@@ -15,11 +15,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Installs makedeb using the official shell script
+      # 2. Sets up makedeb by manually adding the APT repository
       - name: Set up makedeb
-        env:
-          TERM: dumb
-        run: bash -c "$(wget -qO - 'https://shlink.makedeb.org/install')"
+        run: |
+          wget -qO - 'https://proget.makedeb.org/debian-feeds/makedeb.pub' | gpg --dearmor | sudo tee /usr/share/keyrings/makedeb-archive-keyring.gpg > /dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/makedeb-archive-keyring.gpg arch=all] https://proget.makedeb.org/ makedeb main' | sudo tee /etc/apt/sources.list.d/makedeb.list
+          sudo apt-get update
+          sudo apt-get install -y makedeb
 
       # 3. Builds the package using makedeb
       - name: Build Package
