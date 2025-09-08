@@ -17,7 +17,7 @@ jobs:
 
       # 2. Installs makedeb using the official shell script
       - name: Set up makedeb
-        run: bash -ci "$(wget -qO - 'https://shlink.makedeb.org/install')"
+        run: bash -c "$(wget -qO - 'https://shlink.makedeb.org/install')"
 
       # 3. Builds the package using makedeb
       - name: Build Package
