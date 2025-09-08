@@ -15,9 +15,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Sets up makedeb using the official GitHub Action
+      # 2. Installs makedeb using the official shell script
       - name: Set up makedeb
-        uses: makedeb/setup-makedeb@v1
+        run: bash -ci "$(wget -qO - 'https://shlink.makedeb.org/install')"
 
       # 3. Builds the package using makedeb
       - name: Build Package
