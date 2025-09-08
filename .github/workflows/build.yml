@@ -1,48 +1,61 @@
-# .github/workflows/build.yml
+name: Build i3ipc-glib DEB Package
 
-name: Build Debian Package
-
-# Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main, master ]
+    branches:
+      - master
   pull_request:
-    branches: [ main, master ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    branches:
+      - master
 
 jobs:
-  build:
-    # The type of runner that the job will run on
+  build-deb:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Install build tools and dependencies
+      # Set up makedeb environment
+      - name: Install makedeb
+        run: |
+          wget -O makedeb.deb https://github.com/makedeb/makedeb/releases/latest/download/makedeb.deb
+          sudo dpkg -i makedeb.deb
+          sudo apt-get update
+          sudo apt-get install -y makedeb
+
+      # Install dependencies for building i3ipc-glib
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          # Install the tools needed to build a Debian package
-          sudo apt-get install -y build-essential git devscripts equivs
-          sudo apt-get install -y mk-build-deps
-          # This command reads debian/control and installs all build dependencies
-          sudo mk-build-deps --install --remove -y debian/control
+          sudo apt-get install -y \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            libxcb1-dev \
+            xcb-proto \
+            libglib2.0-dev \
+            libjson-glib-dev \
+            gtk-doc-tools \
+            gobject-introspection
 
-      # 3. Build the .deb package
-      - name: Build the package
+      # Build the project
+      - name: Build i3ipc-glib
         run: |
-          # The '-us -uc' flags prevent signing the package, which is not needed here
-          debuild -us -uc
+          ./autogen.sh --prefix=/usr
+          make
+          sudo make install
 
-      # 4. Upload the build artifacts
-      - name: Upload .deb packages
+      # Create DEB package using makedeb
+      - name: Create DEB package
+        run: |
+          makedeb -s --no-confirm
+          mv *.deb i3ipc-glib.deb
+
+      # Upload the DEB package as an artifact
+      - name: Upload DEB package
         uses: actions/upload-artifact@v4
         with:
-          name: libi3ipc-glib-deb-packages
-          # The build process places the .deb files in the parent directory
-          path: ../*.deb
+          name: i3ipc-glib-deb
+          path: i3ipc-glib.deb
