@@ -1,58 +1,31 @@
-name: Build i3ipc-glib DEB Package
+name: Build Debian Package
 
 on:
   push:
-    branches:
-      - master
+    branches: [ "master" ]
   pull_request:
-    branches:
-      - master
+    branches: [ "master" ]
+  workflow_dispatch:
 
 jobs:
-  build-deb:
+  build:
     runs-on: ubuntu-latest
     steps:
-      # Checkout the repository
-      - name: Checkout repository
+      # 1. Checks out your repository's code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Set up makedeb environment
-      - name: Install makedeb
-        run: |
-          bash -ci "$(wget -qO - 'https://shlink.makedeb.org/install')"
+      # 2. Sets up makedeb using the official GitHub Action
+      - name: Set up makedeb
+        uses: makedeb/setup-makedeb@v1
 
-      # Install dependencies for building i3ipc-glib
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            libxcb1-dev \
-            xcb-proto \
-            libglib2.0-dev \
-            libjson-glib-dev \
-            gtk-doc-tools \
-            gobject-introspection
+      # 3. Builds the package using makedeb
+      - name: Build Package
+        run: makedeb -s --no-confirm
 
-      # Build the project
-      - name: Build i3ipc-glib
-        run: |
-          ./autogen.sh --prefix=/usr
-          make
-          sudo make install
-
-      # Create DEB package using makedeb
-      - name: Create DEB package
-        run: |
-          makedeb -s --no-confirm
-          mv *.deb i3ipc-glib.deb
-
-      # Upload the DEB package as an artifact
-      - name: Upload DEB package
+      # 4. Uploads the final .deb file as a build artifact
+      - name: Upload .deb Package
         uses: actions/upload-artifact@v4
         with:
           name: i3ipc-glib-deb
-          path: i3ipc-glib.deb
+          path: "*.deb"
