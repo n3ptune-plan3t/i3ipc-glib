@@ -1,0 +1,47 @@
+# .github/workflows/build.yml
+
+name: Build Debian Package
+
+# Controls when the action will run. 
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checks out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Install build tools and dependencies
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          # Install the tools needed to build a Debian package
+          sudo apt-get install -y build-essential git devscripts equivs
+          # This command reads debian/control and installs all build dependencies
+          sudo mk-build-deps --install --remove -y
+
+      # 3. Build the .deb package
+      - name: Build the package
+        run: |
+          # The '-us -uc' flags prevent signing the package, which is not needed here
+          debuild -us -uc
+
+      # 4. Upload the build artifacts
+      - name: Upload .deb packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: libi3ipc-glib-deb-packages
+          # The build process places the .deb files in the parent directory
+          path: ../*.deb
