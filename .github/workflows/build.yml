@@ -21,6 +21,9 @@ jobs:
             build-essential meson ninja-build git \
             libglib2.0-dev libjson-glib-dev
 
+      - name: Install xcb dependencies
+        run: sudo apt-get update && sudo apt-get install -y libxcb1-dev
+        
       - name: Configure & Build
         run: |
           meson setup build --prefix=/usr
