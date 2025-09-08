@@ -1,35 +1,63 @@
-name: Build Debian Package
+name: Build i3ipc-glib .deb
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    tags:
+      - 'v*'   # build only when you tag a version
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      # 1. Checks out your repository's code
-      - name: Checkout Repository
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      # 2. Sets up makedeb by manually adding the APT repository
-      - name: Set up makedeb
+      - name: Install dependencies
         run: |
-          wget -qO - 'https://proget.makedeb.org/debian-feeds/makedeb.pub' | gpg --dearmor | sudo tee /usr/share/keyrings/makedeb-archive-keyring.gpg > /dev/null
-          echo 'deb [signed-by=/usr/share/keyrings/makedeb-archive-keyring.gpg arch=all] https://proget.makedeb.org/ makedeb main' | sudo tee /etc/apt/sources.list.d/makedeb.list
-          sudo apt-get update
-          sudo apt-get install -y makedeb
+          sudo apt update
+          sudo apt install -y \
+            build-essential meson ninja-build git \
+            libglib2.0-dev libjson-glib-dev
 
-      # 3. Builds the package using makedeb
-      - name: Build Package
-        run: makedeb -s --no-confirm
+      - name: Configure & Build
+        run: |
+          meson setup build --prefix=/usr
+          ninja -C build
 
-      # 4. Uploads the final .deb file as a build artifact
-      - name: Upload .deb Package
+      - name: Install into package dir
+        run: |
+          mkdir -p debbuild/DEBIAN
+          DESTDIR=$(pwd)/debbuild meson install -C build
+
+          cat > debbuild/DEBIAN/control <<EOF
+          Package: i3ipc-glib
+          Version: ${GITHUB_REF_NAME#v}
+          Section: libs
+          Priority: optional
+          Architecture: amd64
+          Depends: libglib2.0-0, libjson-glib-1.0-0
+          Maintainer: GitHub CI <noreply@example.com>
+          Description: GLib bindings for the i3 IPC protocol
+           i3ipc-glib lets programs communicate with i3 window manager using GLib/GObject.
+          EOF
+
+      - name: Build .deb
+        run: |
+          dpkg-deb --build debbuild
+          mv debbuild.deb i3ipc-glib_${GITHUB_REF_NAME#v}_amd64.deb
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: i3ipc-glib-deb
-          path: "*.deb"
+          path: i3ipc-glib_*_amd64.deb
+
+      - name: Upload Release asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: i3ipc-glib_*_amd64.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
