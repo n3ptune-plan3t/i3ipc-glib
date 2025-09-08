@@ -19,10 +19,7 @@ jobs:
       # Set up makedeb environment
       - name: Install makedeb
         run: |
-          wget -O makedeb.deb https://github.com/makedeb/makedeb/releases/latest/download/makedeb.deb
-          sudo dpkg -i makedeb.deb
-          sudo apt-get update
-          sudo apt-get install -y makedeb
+          bash -ci "$(wget -qO - 'https://shlink.makedeb.org/install')"
 
       # Install dependencies for building i3ipc-glib
       - name: Install build dependencies
