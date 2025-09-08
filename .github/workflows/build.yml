@@ -30,7 +30,7 @@ jobs:
           # Install the tools needed to build a Debian package
           sudo apt-get install -y build-essential git devscripts equivs
           # This command reads debian/control and installs all build dependencies
-          sudo mk-build-deps --install --remove -y
+          sudo mk-build-deps --install --remove -y debian/control
 
       # 3. Build the .deb package
       - name: Build the package
