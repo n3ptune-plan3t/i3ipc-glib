@@ -1,4 +1,3 @@
-```yaml
 name: Build i3ipc-glib on Debian
 
 on:
@@ -48,4 +47,3 @@ jobs:
         with:
           name: i3ipc-glib-deb
           path: ../*.deb
-```
